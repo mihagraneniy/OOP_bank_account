@@ -21,33 +21,56 @@ class BankAccount(AbstractAccount):
         else:
             raise InvalidOperationError(f"Неизвестный статус счёта: {self.status!r}") 
     
-    def _validate_sum_amount(self, amount):
+    def _validate_decimal(self, amount:Decimal):
         if not isinstance(amount, Decimal):
             raise InvalidOperationError(
                 f"Сумма должна быть типом - Decimal, получен тип - {type(amount).__name__}"
-            )
-        elif not amount.is_finite():
-            raise InvalidOperationError(f"Сумма должна быть конечным числом, получено {amount}")
-        elif amount <= Decimal("0"):
-            raise InvalidOperationError(
-                f"Сумма должна быть больше нуля, получено {amount}"
-            )
+            ) 
+           
+    def _validate_finite_amount(self, amount:Decimal):
+        if not amount.is_finite():
+            raise InvalidOperationError(f"Сумма должна быть конечным числом, передано {amount}")
 
+    def _validate_non_negative_amount(self, amount: Decimal, *, strict: bool = False):
+        if strict:
+            if amount <= 0:
+                raise InvalidOperationError(
+                    f"Сумма должна быть больше нуля, передано {amount}"
+                )
+        else:
+            if amount < 0:
+                raise InvalidOperationError(
+                    f"Сумма должна быть неотрицательной, передано {amount}"
+                )
 
-    def deposit(self, amount):
+    def _validate_attr(self, value):
+        self._validate_decimal(value)
+        self._validate_finite_amount(value)
+        self._validate_non_negative_amount(value, strict=False)
+
+    def _validate_operation(self, amount: Decimal, *, strict: bool = True):
         self._check_status()
-        self._validate_sum_amount(amount)
+        self._validate_decimal(amount)
+        self._validate_finite_amount(amount)
+        self._validate_non_negative_amount(amount, strict=strict)
+
+    def deposit(self, amount:Decimal):
+        self._validate_operation(amount, strict = True)
         self._balance += amount
 
-    def withdraw(self, amount):
-        self._check_status()
-        self._validate_sum_amount(amount)
-        if amount > self.balance:
-            raise InsufficientFundsError(
-                f"Сумма списания {amount} превышает текущий баланс {self.balance} на {amount - self.balance} {self.currency.value}"
-            )
+    def withdraw(self, amount:Decimal):
+        self._validate_operation(amount, strict = True)
+        self._validate_withdrawal(amount)
         self._balance -= amount        
 
+    def _validate_withdrawal(self, amount: Decimal):
+        if amount > self.balance:
+            raise InsufficientFundsError(
+                f"Сумма списания {amount} превышает "
+                f"текущий баланс {self.balance} "
+                f"на {amount - self.balance} {self.currency.value}"
+            )
+    
     def get_account_info(self):
         return {
             'id': self.id,

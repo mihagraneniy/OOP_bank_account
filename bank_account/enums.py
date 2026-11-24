@@ -6,10 +6,16 @@ class AccountStatus(Enum):
     FROZEN = "Заморожен"
     CLOSED = "Закрыт"
 
-
-class Currency (Enum):
+# Валюта счета 
+class Currency(Enum):
     RUB = "RUB"
     USD = "USD"
     EUR = "EUR"
     KZT = "KZT"
     CNY = "CNY"
+
+#Типы инвест. активов
+class AssetType(Enum):
+    STOCKS = "stocks"
+    BONDS = "bonds"
+    ETF = "etf"
