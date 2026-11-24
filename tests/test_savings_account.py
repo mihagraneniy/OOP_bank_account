@@ -27,16 +27,6 @@ from bank_account.savings_account import SavingsAccount
 # ---------- фикстуры ----------
 
 @pytest.fixture
-def client():
-    """Минимальный валидный клиент."""
-    return Client(
-        name="Иван Иванов",
-        birth_date=date(1990, 1, 1),
-        phone="+79001234567",
-    )
-
-
-@pytest.fixture
 def savings(client):
     """Базовый счёт: min_balance=0, rate=0, баланс 0."""
     return SavingsAccount(
@@ -45,7 +35,6 @@ def savings(client):
         min_balance=Decimal("0"),
         monthly_interest_rate=Decimal("0"),
     )
-
 
 # ---------- 1. Создание счёта ----------
 

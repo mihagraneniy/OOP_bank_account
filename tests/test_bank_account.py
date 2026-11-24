@@ -33,16 +33,6 @@ from bank_account.exceptions import (
 # ---------- фикстуры ----------
 
 @pytest.fixture
-def client():
-    """Минимальный валидный клиент."""
-    return Client(
-        name="Иван Иванов",
-        birth_date=date(1990, 1, 1),
-        phone="+79001234567",
-    )
-
-
-@pytest.fixture
 def account(client):
     """RUB-счёт с нулевым балансом и статусом ACTIVE."""
     return BankAccount(owner=client, currency=Currency.RUB)

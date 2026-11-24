@@ -29,16 +29,6 @@ from bank_account.investment_account import InvestmentAccount
 
 
 # ---------- фикстуры ----------
-
-@pytest.fixture
-def client():
-    return Client(
-        name="Иван Иванов",
-        birth_date=date(1990, 1, 1),
-        phone="+79001234567",
-    )
-
-
 @pytest.fixture
 def account(client):
     """Пустой инвестиционный счёт в рублях."""

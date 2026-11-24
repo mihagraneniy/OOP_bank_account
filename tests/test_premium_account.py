@@ -31,16 +31,6 @@ from bank_account.premium_account import PremiumAccount
 # ---------- фикстуры ----------
 
 @pytest.fixture
-def client():
-    """Минимальный валидный клиент."""
-    return Client(
-        name="Иван Иванов",
-        birth_date=date(1990, 1, 1),
-        phone="+79001234567",
-    )
-
-
-@pytest.fixture
 def premium(client):
     """Базовый премиум-счёт: все параметры нулевые, баланс 0."""
     return PremiumAccount(
