@@ -19,3 +19,8 @@ class AssetType(Enum):
     STOCKS = "stocks"
     BONDS = "bonds"
     ETF = "etf"
+
+# Статус клиента 
+class ClientStatus(Enum):
+    ACTIVE = "Активен"
+    BLOCKED = "Заблокирован"
