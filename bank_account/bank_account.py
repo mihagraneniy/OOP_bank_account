@@ -43,6 +43,11 @@ class BankAccount(AbstractAccount):
                     f"Сумма должна быть неотрицательной, передано {amount}"
                 )
 
+    def _validate_attr(self, value):
+        self._validate_decimal(value)
+        self._validate_finite_amount(value)
+        self._validate_non_negative_amount(value, strict=False)
+
     def _validate_operation(self, amount: Decimal, *, strict: bool = True):
         self._check_status()
         self._validate_decimal(amount)
@@ -55,12 +60,17 @@ class BankAccount(AbstractAccount):
 
     def withdraw(self, amount:Decimal):
         self._validate_operation(amount, strict = True)
-        if amount > self.balance:
-            raise InsufficientFundsError(
-                f"Сумма списания {amount} превышает текущий баланс {self.balance} на {amount - self.balance} {self.currency.value}"
-            )
+        self._validate_withdrawal(amount)
         self._balance -= amount        
 
+    def _validate_withdrawal(self, amount: Decimal):
+        if amount > self.balance:
+            raise InsufficientFundsError(
+                f"Сумма списания {amount} превышает "
+                f"текущий баланс {self.balance} "
+                f"на {amount - self.balance} {self.currency.value}"
+            )
+    
     def get_account_info(self):
         return {
             'id': self.id,

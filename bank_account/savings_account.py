@@ -7,14 +7,10 @@ class SavingsAccount(BankAccount):
     def __init__(self, owner, currency, min_balance: Decimal, monthly_interest_rate: Decimal, account_id = None):
         super().__init__(owner, currency, account_id)
         
-        self._validate_decimal(min_balance)
-        self._validate_finite_amount(min_balance)
-        self._validate_non_negative_amount(min_balance, strict=False)
+        self._validate_attr(min_balance)
         self._min_balance = min_balance
 
-        self._validate_decimal(monthly_interest_rate)
-        self._validate_finite_amount(monthly_interest_rate)
-        self._validate_non_negative_amount(monthly_interest_rate, strict=False)
+        self._validate_attr(monthly_interest_rate)
         self._monthly_interest_rate = monthly_interest_rate 
     
     @property
@@ -25,16 +21,6 @@ class SavingsAccount(BankAccount):
     def monthly_interest_rate(self):
         return self._monthly_interest_rate
 
-    def _validate_withdrawal(self, amount: Decimal):
-        self._validate_operation(amount, strict=True)
-
-        if amount > self.balance:
-            raise InsufficientFundsError(
-                f"Сумма списания {amount} превышает "
-                f"текущий баланс {self.balance} "
-                f"на {amount - self.balance} {self.currency.value}"
-            )
-    
     def apply_monthly_interest(self) -> Decimal:
         
         self._check_status()
@@ -48,6 +34,7 @@ class SavingsAccount(BankAccount):
         return self._balance
 
     def withdraw(self, amount: Decimal):
+        self._validate_operation(amount, strict = True)
         self._validate_withdrawal(amount)
 
         if self.balance - amount < self._min_balance:
@@ -65,5 +52,6 @@ class SavingsAccount(BankAccount):
         return account_info
     
     def __str__(self):
-        pairs = ", \n".join(f"{k}:{v}" for k, v in self.get_account_info().items())
-        return f"Накопительный счёт: ({pairs})" 
+        return super().__str__().replace(
+            "Банковский счет:", "Накопительный счет:", 1
+        )
