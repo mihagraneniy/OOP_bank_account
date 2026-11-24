@@ -42,19 +42,19 @@ class BankAccount(AbstractAccount):
                 raise InvalidOperationError(
                     f"Сумма должна быть неотрицательной, передано {amount}"
                 )
-            
-    def deposit(self, amount:Decimal):
+
+    def _validate_operation(self, amount: Decimal, *, strict: bool = True):
         self._check_status()
         self._validate_decimal(amount)
         self._validate_finite_amount(amount)
-        self._validate_non_negative_amount(amount, strict=True)
+        self._validate_non_negative_amount(amount, strict=strict)
+
+    def deposit(self, amount:Decimal):
+        self._validate_operation(amount, strict = True)
         self._balance += amount
 
     def withdraw(self, amount:Decimal):
-        self._check_status()
-        self._validate_decimal(amount)
-        self._validate_finite_amount(amount)
-        self._validate_non_negative_amount(amount, strict=True)
+        self._validate_operation(amount, strict = True)
         if amount > self.balance:
             raise InsufficientFundsError(
                 f"Сумма списания {amount} превышает текущий баланс {self.balance} на {amount - self.balance} {self.currency.value}"

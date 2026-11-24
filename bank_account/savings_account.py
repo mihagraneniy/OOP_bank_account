@@ -1,8 +1,9 @@
 from decimal import Decimal, ROUND_HALF_UP
 from .bank_account import BankAccount
-from .exceptions import InvalidOperationError
+from .exceptions import InvalidOperationError, InsufficientFundsError
 
 class SavingsAccount(BankAccount):
+    
     def __init__(self, owner, currency, min_balance: Decimal, monthly_interest_rate: Decimal, account_id = None):
         super().__init__(owner, currency, account_id)
         
@@ -24,6 +25,15 @@ class SavingsAccount(BankAccount):
     def monthly_interest_rate(self):
         return self._monthly_interest_rate
 
+    def _validate_withdrawal(self, amount: Decimal):
+        self._validate_operation(amount, strict=True)
+
+        if amount > self.balance:
+            raise InsufficientFundsError(
+                f"Сумма списания {amount} превышает "
+                f"текущий баланс {self.balance} "
+                f"на {amount - self.balance} {self.currency.value}"
+            )
     
     def apply_monthly_interest(self) -> Decimal:
         
@@ -37,9 +47,23 @@ class SavingsAccount(BankAccount):
 
         return self._balance
 
-    def withdraw(self, amount):
+    def withdraw(self, amount: Decimal):
+        self._validate_withdrawal(amount)
+
         if self.balance - amount < self._min_balance:
             raise InvalidOperationError(
-                    f"Сумма снятия превышает минимальный остаток на {self._min_balance - amount} {self.currency.value}"
-                )  
-        return super().withdraw(amount)
+                f"После снятия баланс не может быть "
+                f"меньше минимального остатка {self._min_balance}"
+            )
+
+        self._balance -= amount
+
+    def get_account_info(self):
+        account_info = super().get_account_info()
+        savings_account_info = {'min_balance': self.min_balance, 'monthly_interest_rate':self.monthly_interest_rate}
+        account_info.update(savings_account_info)      
+        return account_info
+    
+    def __str__(self):
+        pairs = ", \n".join(f"{k}:{v}" for k, v in self.get_account_info().items())
+        return f"Накопительный счёт: ({pairs})" 
