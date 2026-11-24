@@ -2,8 +2,8 @@ import pytest
 from datetime import date, timedelta
 from uuid import UUID, uuid4
 
-from myproject.client import Client
-from myproject.enums import ClientStatus
+from bank_account.client import Client
+from bank_account.enums import ClientStatus
 
 
 # ---------------------------------------------------------------------------
@@ -12,9 +12,12 @@ from myproject.enums import ClientStatus
 
 def born_years_ago(years: int, day_shift: int = 0) -> date:
     """
-    Дата рождения, при которой человеку исполняется ровно `years` лет
-    ровно `day_shift` дней назад (day_shift=0 — сегодня; +1 — завтра;
-    -1 — вчера; так удобно проверять граничные случаи дня рождения).
+    Дата рождения, сдвинутая на `day_shift` дней относительно "ровно `years` лет назад".
+
+    Семантика day_shift:
+      day_shift == 0   — ДР сегодня, человеку ровно `years` лет;
+      day_shift <  0   — ДР уже был в этом году, возраст = `years`;
+      day_shift >  0   — ДР ещё впереди в этом году, возраст = `years - 1`.
     """
     today = date.today()
     try:
@@ -62,14 +65,17 @@ def test_birth_date_as_wrong_type_raises(bad_value):
 # ---------------------------------------------------------------------------
 
 @pytest.mark.parametrize("years,day_shift,expected_age", [
-    (18, 0, 18),      # ДР сегодня
-    (18, -1, 18),     # ДР был вчера
-    (18, -300, 18),   # ДР был давно (в этом году)
+    # day_shift == 0 — ДР сегодня
+    (18, 0, 18),
     (19, 0, 19),
     (25, 0, 25),
-    (30, 100, 30),    # ДР был 100 дней назад
-    (30, -100, 30),   # ДР был 100 дней тому назад (т.е. наступил в этом году)
     (100, 0, 100),
+    # day_shift < 0 — ДР уже был в этом году, возраст = years
+    (18, -1, 18),       # вчера исполнилось 18
+    (18, -300, 18),     # ДР был давно в этом году
+    (30, -100, 30),     # ДР был ~100 дней назад
+    # day_shift > 0 — ДР ещё впереди, возраст = years - 1
+    (30, 100, 29),      # ДР будет через ~100 дней → ещё 29
 ])
 def test_age_property_returns_expected(years, day_shift, expected_age):
     client = make_client(birth_date=born_years_ago(years, day_shift))
@@ -92,7 +98,7 @@ def test_age_17_full_years_raises():
 
 
 def test_age_17_birthday_tomorrow_raises():
-    # Вчера пошёл 18-й год? Нет: 18 исполнится только завтра → сегодня 17
+    # ДР будет завтра → сегодня ещё 17
     with pytest.raises(ValueError):
         make_client(birth_date=born_years_ago(18, day_shift=1))
 
