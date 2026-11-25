@@ -28,9 +28,9 @@ class BankAccount(AbstractAccount):
                 f"ID счёта должен быть UUID, "
                 f"получен тип {type(account_id).__name__}"
             )
+        self._check_currency(currency)        
         
         super().__init__(owner, account_id)
-        self._check_currency(currency)
         self.currency = currency
     
     def _check_currency(self, currency: Currency) -> None:
