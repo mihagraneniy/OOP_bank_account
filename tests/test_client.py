@@ -118,12 +118,6 @@ def test_age_18_birthday_yesterday_ok():
     assert client.age == 18
 
 
-def test_age_18_yesterday_no_off_by_one():
-    """Человек, которому вчера исполнилось 18, должен считаться 18-летним."""
-    client = make_client(birth_date=born_years_ago(18, day_shift=-1))
-    assert client.age == 18
-
-
 def test_future_birth_date_raises():
     with pytest.raises(ValueError):
         make_client(birth_date=date.today() + timedelta(days=365))
@@ -191,7 +185,34 @@ def test_all_fields_are_stored():
 
 
 def test_accounts_default_not_shared():
-    """Поле accounts — список; проверяем, что он не разделяется между экземплярами."""
     c1 = make_client()
     c2 = make_client()
-    assert c1.accounts is not c2.accounts
+
+    c1.accounts.append(uuid4())
+
+    assert c1.accounts != c2.accounts
+    assert c2.accounts == []
+
+
+def test_default_status_is_active():
+    client = make_client()
+    assert client.status == ClientStatus.ACTIVE
+
+
+def test_invalid_status_raises():
+    with pytest.raises(ValueError):
+        make_client(status="ACTIVE")
+
+
+def test_invalid_id_raises():
+    with pytest.raises(ValueError):
+        make_client(id="12345")
+
+def test_invalid_accounts_type_raises():
+    with pytest.raises(ValueError):
+        make_client(accounts="not a list")
+
+
+def test_accounts_must_contain_uuids():
+    with pytest.raises(ValueError):
+        make_client(accounts=["12345"])
