@@ -297,3 +297,25 @@ def test_project_on_blocked_account_works(funded_account, status):
     funded_account.invest(AssetType.STOCKS, Decimal("100"))
     funded_account._status = status
     assert funded_account.project_yearly_growth() == Decimal("10.00")
+
+# ---------- 9. После правок по итогам ревью ----------
+
+def test_investment_account_withdraw(investment_account):
+    investment_account.deposit(Decimal("100"))
+    investment_account.withdraw(Decimal("30"))
+
+    assert investment_account.balance == Decimal("70")
+
+
+def test_investment_account_info_contains_portfolio(investment_account):
+    info = investment_account.get_account_info()
+
+    assert "portfolio" in info
+    assert info["type"] == "InvestmentAccount"
+
+
+def test_investment_account_str(investment_account):
+    result = str(investment_account)
+
+    assert "Инвестиционный счёт" in result
+    assert "portfolio" in result
