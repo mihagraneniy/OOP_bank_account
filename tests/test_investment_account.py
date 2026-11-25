@@ -300,22 +300,28 @@ def test_project_on_blocked_account_works(funded_account, status):
 
 # ---------- 9. После правок по итогам ревью ----------
 
-def test_investment_account_withdraw(investment_account):
-    investment_account.deposit(Decimal("100"))
-    investment_account.withdraw(Decimal("30"))
+def test_investment_account_withdraw(client):
+    account = InvestmentAccount(client, Currency.RUB)
+    account.deposit(Decimal("100"))
+    account.withdraw(Decimal("30"))
 
-    assert investment_account.balance == Decimal("70")
+    assert account.balance == Decimal("70")
 
 
-def test_investment_account_info_contains_portfolio(investment_account):
-    info = investment_account.get_account_info()
+def test_investment_account_info_contains_portfolio(client):
+    account = InvestmentAccount(client, Currency.RUB)
+
+    info = account.get_account_info()
 
     assert "portfolio" in info
     assert info["type"] == "InvestmentAccount"
 
 
-def test_investment_account_str(investment_account):
-    result = str(investment_account)
+def test_investment_account_str(client):
+    account = InvestmentAccount(client, Currency.RUB)
 
-    assert "Инвестиционный счёт" in result
+    result = str(account)
+
+    assert "Инвестиционный счет" in result
     assert "portfolio" in result
+
