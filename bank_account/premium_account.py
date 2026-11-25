@@ -1,5 +1,5 @@
 from .bank_account import BankAccount
-from .exceptions import InvalidOperationError
+from exceptions.exceptions import InvalidOperationError
 
 class PremiumAccount(BankAccount):
     def __init__(self, owner, currency, max_withdrawal, overdraft_limit, fixed_fee, account_id = None):

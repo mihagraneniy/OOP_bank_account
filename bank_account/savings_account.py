@@ -1,6 +1,6 @@
 from decimal import Decimal, ROUND_HALF_UP
 from .bank_account import BankAccount
-from .exceptions import InvalidOperationError, InsufficientFundsError
+from exceptions.exceptions import InvalidOperationError, InsufficientFundsError
 
 class SavingsAccount(BankAccount):
     

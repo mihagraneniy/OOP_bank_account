@@ -2,7 +2,7 @@ from abc  import ABC, abstractmethod
 from decimal import Decimal
 from uuid import UUID, uuid4
 from typing import Dict
-from .enums import AccountStatus
+from enums.enums import AccountStatus
 
 class AbstractAccount(ABC):
 

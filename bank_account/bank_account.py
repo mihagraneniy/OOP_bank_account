@@ -1,9 +1,9 @@
 from .abstract_account import AbstractAccount
-from .client import Client
-from .enums import Currency, AccountStatus
+from client.client import Client
+from enums.enums import Currency, AccountStatus
 from uuid import UUID
 from decimal import Decimal
-from .exceptions import (AccountClosedError, AccountFrozenError,
+from exceptions.exceptions import (AccountClosedError, AccountFrozenError,
                         InsufficientFundsError, InvalidOperationError)
 
 class BankAccount(AbstractAccount):

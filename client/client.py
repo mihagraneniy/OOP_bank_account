@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 from datetime import date
 from uuid import UUID, uuid4
-from .enums import ClientStatus
+from enums.enums import ClientStatus
 
 
 @dataclass

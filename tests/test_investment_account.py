@@ -17,9 +17,9 @@ from datetime import date
 
 import pytest
 
-from bank_account.client import Client
-from bank_account.enums import AssetType, Currency, AccountStatus
-from bank_account.exceptions import (
+from client.client import Client
+from enums.enums import AssetType, Currency, AccountStatus
+from exceptions.exceptions import (
     AccountClosedError,
     AccountFrozenError,
     InsufficientFundsError,

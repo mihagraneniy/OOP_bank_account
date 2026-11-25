@@ -3,8 +3,8 @@ import pytest
 from datetime import date, timedelta
 from uuid import uuid4
 
-from bank_account.client import Client
-from bank_account.enums import ClientStatus
+from client.client import Client
+from enums.enums import ClientStatus
 
 
 def _born_years_ago(years: int) -> date:

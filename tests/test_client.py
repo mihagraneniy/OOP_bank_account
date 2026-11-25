@@ -2,8 +2,8 @@ import pytest
 from datetime import date, timedelta
 from uuid import UUID, uuid4
 
-from bank_account.client import Client
-from bank_account.enums import ClientStatus
+from client.client import Client
+from enums.enums import ClientStatus
 
 
 # ---------------------------------------------------------------------------

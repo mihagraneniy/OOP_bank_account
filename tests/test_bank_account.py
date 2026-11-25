@@ -19,10 +19,10 @@ from uuid import uuid4
 import pytest
 
 from bank_account.abstract_account import AbstractAccount
-from bank_account.client import Client
+from client.client import Client
 from bank_account.bank_account import BankAccount
-from bank_account.enums import Currency, AccountStatus
-from bank_account.exceptions import (
+from enums.enums import Currency, AccountStatus
+from exceptions.exceptions import (
     AccountClosedError,
     AccountFrozenError,
     InsufficientFundsError,
