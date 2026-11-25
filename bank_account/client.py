@@ -7,16 +7,16 @@ from .enums import ClientStatus
 @dataclass
 class Client:
     # Обязательные поля
-    status: ClientStatus
     name: str
     birth_date: date
     phone: str
     email: str
-    accounts: list[UUID]
-
+   
     # Поля со значениями по умолчанию
+    status: ClientStatus = ClientStatus.ACTIVE
     id: UUID = field(default_factory=uuid4)
-
+    accounts: list[UUID] = field(default_factory=list)
+    
     # Возраст через property
     @property
     def age(self) -> int:

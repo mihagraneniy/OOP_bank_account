@@ -24,3 +24,4 @@ class AssetType(Enum):
 class ClientStatus(Enum):
     ACTIVE = "Активен"
     BLOCKED = "Заблокирован"
+    DELETED = "Удален"

@@ -88,12 +88,13 @@ def test_account_id_is_last_four_of_uuid(client):
     """
     full_id = uuid4()
     acc = BankAccount(owner=client, currency=Currency.RUB, account_id=full_id)
-    assert acc.id == str(full_id)[-4:]
+    assert acc.id == str(full_id)
 
 
 def test_auto_generated_id_is_four_chars(account):
     """Если UUID не передан, id всё равно генерируется и даёт 4 символа."""
-    assert len(account.id) == 4
+    from uuid import UUID
+    assert str(UUID(account.id)) == account.id
 
 
 def test_two_accounts_have_different_full_uuids(client):
@@ -363,7 +364,7 @@ def test_get_account_info_returns_correct_values(account):
     """Значения в словаре соответствуют атрибутам счёта, включая type."""
     account.deposit(Decimal("1000"))
     info = account.get_account_info()
-    assert info["id"] == account.id
+    assert info["id"] == account.id[-4:]
     assert info["type"] == "BankAccount"
     assert info["owner"] == "Иван Иванов"
     assert info["balance"] == Decimal("1000")
@@ -385,7 +386,7 @@ def test_str_contains_owner_name(account):
 
 def test_str_contains_account_id(account):
     """В строке есть последние 4 символа UUID (account.id)."""
-    assert account.id in str(account)
+    assert account.id[-4:] in str(account)
 
 
 def test_str_contains_status(account):
@@ -434,3 +435,28 @@ def test_cannot_instantiate_abstract_account(client):
     """
     with pytest.raises(TypeError):
         AbstractAccount(owner=client)
+
+# ---------- 13. Тесты проверок после ревью ----------
+def test_bank_account_rejects_invalid_owner():
+    with pytest.raises(InvalidOperationError):
+        BankAccount(
+            owner="Иван",
+            currency=Currency.RUB
+        )
+
+
+def test_bank_account_rejects_invalid_currency(client):
+    with pytest.raises(InvalidOperationError):
+        BankAccount(
+            owner=client,
+            currency="RUB"
+        )
+
+
+def test_bank_account_rejects_invalid_account_id(client):
+    with pytest.raises(InvalidOperationError):
+        BankAccount(
+            owner=client,
+            currency=Currency.RUB,
+            account_id="12345"
+        )
