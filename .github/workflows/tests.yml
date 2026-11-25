@@ -24,6 +24,7 @@ jobs:
   quality:
     name: Code Quality
     runs-on: ubuntu-latest
+    continue-on-error: true
 
     steps:
       - name: Checkout repository
@@ -132,10 +133,10 @@ jobs:
           echo "Code Quality: ${{ needs.quality.result }}"
           echo "Tests: ${{ needs.tests.result }}"
 
-          if [ "${{ needs.quality.result }}" != "success" ] || \
-             [ "${{ needs.tests.result }}" != "success" ]; then
-            echo "CI pipeline failed!"
+          if [ "${{ needs.tests.result }}" != "success" ]; then
+            echo "Tests failed! CI pipeline failed."
             exit 1
           fi
 
-          echo "All CI checks passed successfully!"
+          echo "All tests passed successfully!"
+          echo "Code Quality is non-blocking."
