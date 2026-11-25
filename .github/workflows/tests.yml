@@ -42,19 +42,30 @@ jobs:
           pip install -r requirements-dev.txt
 
       - name: Ruff - Lint
+        id: ruff_lint
         continue-on-error: true
-        run: |
-          ruff check . --output-format=github
+        run: ruff check . --output-format=github
 
       - name: Ruff - Format check
+        id: ruff_format
         continue-on-error: true
-        run: |
-          ruff format --check .
+        run: ruff format --check .
 
       - name: Mypy - Type checking
+        id: mypy
         continue-on-error: true
+        run: mypy --ignore-missing-imports .
+
+      - name: Code Quality Summary
+        if: always()
         run: |
-          mypy --ignore-missing-imports .
+          echo "## Code Quality Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Check | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|---|---|" >> $GITHUB_STEP_SUMMARY
+          echo "| Ruff Lint | ${{ steps.ruff_lint.outcome }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Ruff Format | ${{ steps.ruff_format.outcome }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Mypy | ${{ steps.mypy.outcome }} |" >> $GITHUB_STEP_SUMMARY
 
   # ==========================================
   # 2. AUTOMATED TESTING
