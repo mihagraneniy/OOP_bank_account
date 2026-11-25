@@ -19,12 +19,11 @@ concurrency:
 jobs:
 
   # ==========================================
-  # 1. CODE QUALITY
+  # 1. CODE QUALITY (NON-BLOCKING)
   # ==========================================
   quality:
     name: Code Quality
     runs-on: ubuntu-latest
-    continue-on-error: true
 
     steps:
       - name: Checkout repository
@@ -43,14 +42,17 @@ jobs:
           pip install -r requirements-dev.txt
 
       - name: Ruff - Lint
+        continue-on-error: true
         run: |
           ruff check . --output-format=github
 
       - name: Ruff - Format check
+        continue-on-error: true
         run: |
           ruff format --check .
 
       - name: Mypy - Type checking
+        continue-on-error: true
         run: |
           mypy --ignore-missing-imports .
 
