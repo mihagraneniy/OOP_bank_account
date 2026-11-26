@@ -45,6 +45,22 @@ class Bank:
     def security_config(self):
         return self._security_config
     
+    def operation_time_guard(method):
+        """Блокирует команду банка в запрещённое время из его security_config."""
+        @functools.wraps(method)
+        def wrapper(self, *args, **kwargs):
+            config = self.security_config
+            now = datetime.now()
+            if config.is_night_time(now):
+                raise OperationTimeError(
+                    f"Операция '{method.__name__}' недоступна в ночное время "
+                    f"({config.night_start_hour:02d}:00-{config.night_end_hour:02d}:00), "
+                    f"сейчас {now.strftime('%H:%M')}"
+                )
+            return method(self, *args, **kwargs)
+        return wrapper
+
+    @operation_time_guard
     def add_client(self, client: Client) -> None:
         if not isinstance(client, Client):
             raise InvalidOperationError(
@@ -63,23 +79,8 @@ class Bank:
 
         self._clients[client.id] = client
         self._login_attempts[client.id] = 0
-
-
-    def operation_time_guard(method):
-        """Блокирует команду банка в запрещённое время из его security_config."""
-        @functools.wraps(method)
-        def wrapper(self, *args, **kwargs):
-            config = self.security_config
-            now = datetime.now()
-            if config.is_night_time(now):
-                raise OperationTimeError(
-                    f"Операция '{method.__name__}' недоступна в ночное время "
-                    f"({config.night_start_hour:02d}:00-{config.night_end_hour:02d}:00), "
-                    f"сейчас {now.strftime('%H:%M')}"
-                )
-            return method(self, *args, **kwargs)
-        return wrapper
-
+    
+    
     @operation_time_guard
     def open_account(
         self,
@@ -353,3 +354,39 @@ class Bank:
             result.append(account)
 
         return result
+
+    def get_total_balance(self) -> dict[Currency, Decimal]:
+        """Суммирует балансы счетов по валютам."""
+ 
+        totals: dict[Currency, Decimal] = {}
+
+        for account in self._accounts.values():
+            if account.status == AccountStatus.CLOSED:
+                continue
+            current = totals.get(account.currency, Decimal("0"))
+            totals[account.currency] = current + account.balance
+
+        return totals
+
+    def get_clients_ranking(self) -> dict[Currency, list[tuple[Client, Decimal]]]:
+        """ Рейтинг клиентов по суммарному балансу отдельно по каждой валюте. """
+        
+        # Фаза 1: накопление — валюта -> (id клиента -> [клиент, сумма])
+        buckets: dict[Currency, dict[UUID, list]] = {}
+
+        for account in self._accounts.values():
+            if account.status == AccountStatus.CLOSED:
+                continue
+            currency_bucket = buckets.setdefault(account.currency, {})
+            row = currency_bucket.setdefault(
+                account.owner.id, [account.owner, Decimal("0")]
+            )
+            row[1] += account.balance
+
+        # Фаза 2: сортировка клиентов внутри каждой валюты по убыванию суммы
+        ranking: dict[Currency, list[tuple[Client, Decimal]]] = {}
+        for currency, rows in buckets.items():
+            ordered = sorted(rows.values(), key=lambda row: row[1], reverse=True)
+            ranking[currency] = [(client, total) for client, total in ordered]
+
+        return ranking
