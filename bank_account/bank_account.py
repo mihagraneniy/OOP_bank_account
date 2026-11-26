@@ -117,7 +117,7 @@ class BankAccount(AbstractAccount):
         
     def get_account_info(self):
         return {
-            'id': self.id[-4::],
+            'id': str(self.id)[-4:],
             'type': type(self).__name__,
             'owner': self.owner.name,
             'status': self.status.value,

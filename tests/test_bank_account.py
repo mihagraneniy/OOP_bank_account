@@ -78,8 +78,8 @@ def test_new_account_currency_is_rub(account):
     assert account.currency == Currency.RUB
 
 
-def test_account_id_is_last_four_of_uuid(client):
-    """account.id — ровно последние 4 символа переданного UUID.
+def test_account_id_is_uuid(client):
+    """account.id — UUID.
 
     Важно: короткий id предназначен ТОЛЬКО для отображения.
     Уникальность счёта гарантируется полным UUID (_id), а не этими
@@ -88,22 +88,17 @@ def test_account_id_is_last_four_of_uuid(client):
     """
     full_id = uuid4()
     acc = BankAccount(owner=client, currency=Currency.RUB, account_id=full_id)
-    assert acc.id == str(full_id)
+    assert acc.id == full_id
 
 
-def test_auto_generated_id_is_four_chars(account):
-    """Если UUID не передан, id всё равно генерируется и даёт 4 символа."""
+def test_auto_generated_id_is_uuid(account):
+    """Если UUID не передан, id  генерируется."""
     from uuid import UUID
-    assert str(UUID(account.id)) == account.id
+    assert isinstance(account.id, UUID)
 
 
 def test_two_accounts_have_different_full_uuids(client):
-    """Два независимых счёта имеют разные полные UUID.
-
-    Смотрим на _id, потому что публичное свойство id показывает
-    только последние 4 символа — их совпадение теоретически возможно
-    и не означает коллизию счетов.
-    """
+    """ Два независимых счёта имеют разные полные UUID. """
     first = BankAccount(owner=client, currency=Currency.RUB)
     second = BankAccount(owner=client, currency=Currency.RUB)
     assert first._id != second._id
@@ -364,7 +359,7 @@ def test_get_account_info_returns_correct_values(account):
     """Значения в словаре соответствуют атрибутам счёта, включая type."""
     account.deposit(Decimal("1000"))
     info = account.get_account_info()
-    assert info["id"] == account.id[-4:]
+    assert info["id"] == str(account.id)[-4:]
     assert info["type"] == "BankAccount"
     assert info["owner"] == "Иван Иванов"
     assert info["balance"] == Decimal("1000")
@@ -386,7 +381,7 @@ def test_str_contains_owner_name(account):
 
 def test_str_contains_account_id(account):
     """В строке есть последние 4 символа UUID (account.id)."""
-    assert account.id[-4:] in str(account)
+    assert str(account.id)[-4:] in str(account)
 
 
 def test_str_contains_status(account):

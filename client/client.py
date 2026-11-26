@@ -11,6 +11,7 @@ class Client:
     birth_date: date
     phone: str
     email: str
+    pin_code: str
 
     # Поля со значениями по умолчанию
     status: ClientStatus = ClientStatus.ACTIVE
@@ -47,6 +48,16 @@ class Client:
 
         if self.age < 18:
             raise ValueError("Возраст клиента должен быть не менее 18 лет")
+
+        if not isinstance(self.pin_code, str):
+            raise ValueError("ПИН-код должен быть строкой")
+
+        if not (self.pin_code.isascii() and self.pin_code.isdigit()):
+            raise ValueError("ПИН-код должен состоять только из цифр 0–9")
+
+        if not (4 <= len(self.pin_code) <= 8):
+            raise ValueError("ПИН-код должен содержать от 4 до 8 цифр")
+         
 
     @property
     def age(self) -> int:

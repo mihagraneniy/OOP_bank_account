@@ -14,7 +14,7 @@ class AbstractAccount(ABC):
 
     @property
     def id(self):
-        return (str(self._id))
+        return self._id
 
     @property
     def balance(self):

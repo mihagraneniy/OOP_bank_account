@@ -29,24 +29,19 @@ class InvalidOperationError(BankAccountError):
 class InsufficientFundsError(BankAccountError):
   pass
 
+class AccountNotFoundError(BankAccountError):
+    pass
 
 # Исключения - BankError — базовый класс
 class BankError(BaseError):
     """Базовое исключение для операций банка."""
     pass
 
-
 class ClientNotFoundError(BankError):
     pass
 
-
-class AccountNotFoundError(BankError):
-    pass
-
-
 class AuthenticationError(BankError):
     pass
-
 
 class ClientBlockedError(BankError):
     pass

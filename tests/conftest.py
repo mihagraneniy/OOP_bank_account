@@ -2,7 +2,7 @@
 import pytest
 from datetime import date, timedelta
 from uuid import uuid4
-
+from bank.bank import Bank
 from client.client import Client
 from enums.enums import ClientStatus
 
@@ -30,6 +30,7 @@ def make_client():
             birth_date=_born_years_ago(30),   # валидный возраст ≥ 18
             phone="+79990001122",
             email="ivan@example.com",
+            pin_code ="1234",
             accounts=[],
         )
         defaults.update(overrides)
@@ -41,3 +42,12 @@ def make_client():
 def client(make_client):
     """Готовый экземпляр — для тестов, где клиент нужен как есть."""
     return make_client()
+
+@pytest.fixture
+def bank():
+    return Bank("Тестовый банк")
+
+@pytest.fixture
+def registered_client(bank, client):
+    bank.add_client(client)
+    return client
