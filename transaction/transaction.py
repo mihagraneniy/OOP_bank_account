@@ -45,10 +45,10 @@ class Transaction:
         """Валидация транзакции через внешние валидаторы."""
 
         TransactionValidator.validate_types(
-            self.transaction_type,
-            self.currency,
-            self.status,
-            self.priority,
+           transaction_type=self.transaction_type,
+            currency=self.currency,
+            status= self.status,
+            priority=self.priority,
         )
 
         TransactionValidator.validate_amount_and_fee(

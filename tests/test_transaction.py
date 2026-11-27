@@ -1,4 +1,3 @@
-
 # tests/test_transaction.py
 
 from datetime import datetime, timedelta
@@ -17,16 +16,14 @@ from exceptions.exceptions import (
     InvalidOperationError,
     TransactionStatusError,
 )
+from validators import TransactionValidator
 from transaction.transaction import Transaction
 
 
 @pytest.fixture
 def account(client):
     """Банковский счёт в рублях."""
-    return BankAccount(
-        owner=client,
-        currency=Currency.RUB,
-    )
+    return BankAccount(owner=client, currency=Currency.RUB)
 
 
 @pytest.fixture
@@ -37,10 +34,69 @@ def second_account(make_client):
         email="petr@example.com",
         phone="+79990001123",
     )
-    return BankAccount(
-        owner=owner,
+    return BankAccount(owner=owner, currency=Currency.RUB)
+
+
+# ---------------------------------------------------------
+# 0. validate_types: проверка типов полей
+# ---------------------------------------------------------
+
+def test_validate_types_accepts_all_valid():
+    """Все 4 поля с корректными типами — ошибки нет."""
+    TransactionValidator.validate_types(
+        transaction_type=TransactionType.DEPOSIT,
         currency=Currency.RUB,
+        status=TransactionStatus.PENDING,
+        priority=TransactionPriority.NORMAL,
     )
+
+
+def test_validate_types_accepts_empty_kwargs():
+    """Пустой набор — нечего проверять, ошибки нет."""
+    TransactionValidator.validate_types()
+
+
+def test_validate_types_accepts_subset():
+    """Метод валидирует только переданные поля."""
+    TransactionValidator.validate_types(
+        transaction_type=TransactionType.DEPOSIT,
+    )
+
+
+def test_validate_types_rejects_unknown_field():
+    """Неизвестное поле → InvalidOperationError."""
+    with pytest.raises(InvalidOperationError, match="Неизвестные поля"):
+        TransactionValidator.validate_types(
+            transaction_type=TransactionType.DEPOSIT,
+            amount=Decimal("100"),
+        )
+
+
+@pytest.mark.parametrize(
+    "field_name, bad_value, expected_type_name",
+    [
+        ("transaction_type", "DEPOSIT", "TransactionType"),
+        ("currency", "RUB", "Currency"),
+        ("status", 1, "TransactionStatus"),
+        ("priority", object(), "TransactionPriority"),
+    ],
+)
+def test_validate_types_rejects_wrong_type(
+    field_name, bad_value, expected_type_name
+):
+    """Неверный тип поля → InvalidOperationError с именем поля."""
+    with pytest.raises(InvalidOperationError) as exc:
+        TransactionValidator.validate_types(**{field_name: bad_value})
+
+    msg = str(exc.value)
+    assert field_name in msg
+    assert expected_type_name in msg
+
+
+def test_validate_types_rejects_none():
+    """None — не валидное значение для enum-поля."""
+    with pytest.raises(InvalidOperationError):
+        TransactionValidator.validate_types(currency=None)
 
 
 # ---------------------------------------------------------
@@ -117,13 +173,7 @@ def test_create_incoming_external_transfer(account):
     assert transaction.receiver is account
 
 
-@pytest.mark.parametrize(
-    "amount",
-    [
-        Decimal("0"),
-        Decimal("-100"),
-    ],
-)
+@pytest.mark.parametrize("amount", [Decimal("0"), Decimal("-100")])
 def test_transaction_rejects_non_positive_amount(account, amount):
     with pytest.raises(InvalidOperationError):
         Transaction(
@@ -206,9 +256,7 @@ def test_pending_transaction_can_be_processed(account):
         currency=Currency.RUB,
         receiver=account,
     )
-
     transaction.mark_processing()
-
     assert transaction.status == TransactionStatus.PROCESSING
 
 
@@ -219,7 +267,6 @@ def test_processing_transaction_can_be_completed(account):
         currency=Currency.RUB,
         receiver=account,
     )
-
     transaction.mark_processing()
     transaction.mark_completed()
 
@@ -234,7 +281,6 @@ def test_processing_transaction_can_be_failed(account):
         currency=Currency.RUB,
         receiver=account,
     )
-
     transaction.mark_processing()
     transaction.mark_failed("Ошибка обработки")
 
@@ -250,7 +296,6 @@ def test_pending_transaction_can_be_cancelled(account):
         currency=Currency.RUB,
         receiver=account,
     )
-
     transaction.cancel()
 
     assert transaction.status == TransactionStatus.CANCELLED
@@ -266,9 +311,7 @@ def test_scheduled_transaction_can_be_processed_after_scheduled_time(account):
         status=TransactionStatus.SCHEDULED,
         scheduled_at=datetime.now() - timedelta(minutes=1),
     )
-
     transaction.mark_processing()
-
     assert transaction.status == TransactionStatus.PROCESSING
 
 
@@ -283,7 +326,6 @@ def test_pending_transaction_cannot_be_completed_directly(account):
         currency=Currency.RUB,
         receiver=account,
     )
-
     with pytest.raises(TransactionStatusError):
         transaction.mark_completed()
 
@@ -295,7 +337,6 @@ def test_pending_transaction_cannot_be_marked_failed_directly(account):
         currency=Currency.RUB,
         receiver=account,
     )
-
     with pytest.raises(TransactionStatusError):
         transaction.mark_failed("Ошибка")
 
@@ -307,7 +348,6 @@ def test_completed_transaction_cannot_be_cancelled(account):
         currency=Currency.RUB,
         receiver=account,
     )
-
     transaction.mark_processing()
     transaction.mark_completed()
 
@@ -322,7 +362,6 @@ def test_cancelled_transaction_cannot_be_processed(account):
         currency=Currency.RUB,
         receiver=account,
     )
-
     transaction.cancel()
 
     with pytest.raises(TransactionStatusError):
@@ -338,7 +377,6 @@ def test_scheduled_transaction_cannot_be_processed_early(account):
         status=TransactionStatus.SCHEDULED,
         scheduled_at=datetime.now() + timedelta(hours=1),
     )
-
     with pytest.raises(TransactionStatusError):
         transaction.mark_processing()
 
@@ -350,7 +388,6 @@ def test_failed_transaction_cannot_be_completed_again(account):
         currency=Currency.RUB,
         receiver=account,
     )
-
     transaction.mark_processing()
     transaction.mark_failed("Ошибка обработки")
 

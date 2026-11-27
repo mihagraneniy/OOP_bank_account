@@ -1,8 +1,8 @@
 import heapq
 
 from transaction.transaction import Transaction
-from enums.enums import TransactionPriority
-
+from enums.enums import TransactionPriority, TransactionStatus
+from validators import TransactionValidator
 
 class TransactionQueue:
 
@@ -19,16 +19,15 @@ class TransactionQueue:
 
 
     def add(self, transaction: Transaction) -> None:
-        if not isinstance(transaction, Transaction):
-            raise TypeError("Expected Transaction instance")
+        TransactionValidator.validate_types(transaction=transaction)
 
         if transaction.id in self._transactions:
-            raise ValueError("Transaction already exists")
+            raise ValueError(
+                f"Транзакция {transaction.id} уже находится в очереди!"
+            )
 
-        # Преобразуем приоритет в число
-        priority = TransactionQueue.PRIORITY_ORDER[transaction.priority]
+        priority = self.PRIORITY_ORDER[transaction.priority]
 
-        # В куче меньшее значение имеет больший приоритет
         heapq.heappush(
             self._queue,
             (priority, self._counter, transaction)
@@ -37,30 +36,37 @@ class TransactionQueue:
         self._counter += 1
         self._transactions[transaction.id] = transaction
 
-        pass
 
     def get_next(self) -> Transaction | None:
-        # TODO: выбрать следующую транзакцию с учётом приоритета
-        # HIGH > NORMAL > LOW
-        # При одинаковом приоритете раньше добавленная идёт первой
-        pass
+        if not self._queue:
+            return None
+
+        return self._queue[0][2]
+
 
     def cancel(self, transaction_id) -> bool:
-        # TODO: найти транзакцию по ID
-        # TODO: отменить её, если статус допускает отмену
-        # TODO: вернуть True при успехе, False если транзакция не найдена
-        pass
+        transaction = self._transactions.get(transaction_id)
 
-    def schedule(self, transaction: Transaction, scheduled_at) -> None:
-        # TODO: назначить время выполнения
-        # TODO: перевести транзакцию в статус SCHEDULED
-        pass
+        if transaction is None:
+            return False
 
-    def get_ready_transactions(self) -> list[Transaction]:
-        # TODO: вернуть транзакции, которые уже можно обрабатывать
-        # TODO: учитывать приоритет и время отложенного выполнения
-        pass
+        transaction.cancel()
 
-    def __len__(self) -> int:
-        # TODO: вернуть количество транзакций в очереди
-        pass
+        return True
+
+    def pop_next(self) -> Transaction | None:
+
+        while self._queue:
+            transaction = heapq.heappop(self._queue)[2]
+            
+            self._transactions.pop(transaction.id, None)
+
+            if transaction.status == TransactionStatus.CANCELLED:
+                continue
+        
+            return transaction
+        
+        return None
+
+    def __len__(self)-> int:
+        return len(self._queue)

@@ -23,22 +23,24 @@ class TransactionValidator:
     """Валидаторы для транзакций."""
 
     @staticmethod
-    def validate_types(
-        transaction_type: TransactionType,
-        currency: Currency,
-        status: TransactionStatus,
-        priority: TransactionPriority,
-    ) -> None:
-        """Проверка типов основных полей транзакции."""
+    def validate_types(**kwargs) -> None:
+        
+        from transaction.transaction import Transaction
 
-        checks = (
-            (transaction_type, TransactionType, "transaction_type"),
-            (currency, Currency, "currency"),
-            (status, TransactionStatus, "status"),
-            (priority, TransactionPriority, "priority"),
-        )
+        schema = {
+            "transaction_type": TransactionType,
+            "currency": Currency,
+            "status": TransactionStatus,
+            "priority": TransactionPriority,
+            "transaction": Transaction,
+        }
 
-        for value, expected_type, field_name in checks:
+        unknown = kwargs.keys() - schema.keys()
+        if unknown:
+            raise InvalidOperationError(f"Неизвестные поля: {', '.join(unknown)}")
+
+        for field_name, value in kwargs.items():
+            expected_type = schema[field_name]
             if not isinstance(value, expected_type):
                 raise InvalidOperationError(
                     f"{field_name} должен быть {expected_type.__name__}"
