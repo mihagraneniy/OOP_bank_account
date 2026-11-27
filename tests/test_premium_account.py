@@ -18,9 +18,9 @@ from datetime import date
 
 import pytest
 
-from bank_account.client import Client
-from bank_account.enums import Currency, AccountStatus
-from bank_account.exceptions import (
+from client.client import Client
+from enums.enums import Currency, AccountStatus
+from exceptions.exceptions import (
     AccountClosedError,
     AccountFrozenError,
     InvalidOperationError,
@@ -29,16 +29,6 @@ from bank_account.premium_account import PremiumAccount
 
 
 # ---------- фикстуры ----------
-
-@pytest.fixture
-def client():
-    """Минимальный валидный клиент."""
-    return Client(
-        name="Иван Иванов",
-        birth_date=date(1990, 1, 1),
-        phone="+79001234567",
-    )
-
 
 @pytest.fixture
 def premium(client):
@@ -134,55 +124,49 @@ def test_bad_param_type_raises(client, field, bad_value):
         PremiumAccount(**kwargs)
 
 
-# ---------- 3. Комиссия: условие начисления ----------
+# ---------- 3. Комиссия: списание при каждом снятии ----------
 
-def test_no_fee_when_balance_stays_positive(client):
-    """100 → 20: остаёмся в плюсе, комиссии нет."""
-    acc = make(client, balance=Decimal("100"), fixed_fee=Decimal("10"),
-               overdraft_limit=Decimal("1000"))
-    acc.withdraw(Decimal("80"))
-    assert acc.balance == Decimal("20")
+def test_fee_applied_when_balance_stays_positive(client):
+    """100 - 50 - 10 = 40."""
+    acc = make(
+        client,
+        balance=Decimal("100"),
+        fixed_fee=Decimal("10"),
+        overdraft_limit=Decimal("1000")
+    )
 
+    acc.withdraw(Decimal("50"))
 
-def test_no_fee_when_balance_becomes_zero(client):
-    """100 → 0: ровно в ноль — переходом в отрицательный не считается."""
-    acc = make(client, balance=Decimal("100"), fixed_fee=Decimal("10"),
-               overdraft_limit=Decimal("1000"))
-    acc.withdraw(Decimal("100"))
-    assert acc.balance == Decimal("0")
+    assert acc.balance == Decimal("40")
 
 
-def test_fee_applied_on_positive_to_negative_transition(client):
-    """100 → −30: (100 − 120 = −20) + комиссия 10."""
-    acc = make(client, balance=Decimal("100"), fixed_fee=Decimal("10"),
-               overdraft_limit=Decimal("1000"))
-    acc.withdraw(Decimal("120"))
-    assert acc.balance == Decimal("-30")
+def test_fee_applied_when_balance_starts_at_zero(client):
+    """0 - 50 - 10 = -60."""
+    acc = make(
+        client,
+        balance=Decimal("0"),
+        fixed_fee=Decimal("10"),
+        overdraft_limit=Decimal("1000")
+    )
+
+    acc.withdraw(Decimal("50"))
+
+    assert acc.balance == Decimal("-60")
 
 
-def test_fee_applied_on_minimal_overshoot(client):
-    """100 → −10.01: минимальный переход в минус тоже облагается комиссией."""
-    acc = make(client, balance=Decimal("100"), fixed_fee=Decimal("10"),
-               overdraft_limit=Decimal("1000"))
-    acc.withdraw(Decimal("100.01"))
-    assert acc.balance == Decimal("-10.01")
+def test_fee_applied_when_balance_is_negative(client):
+    """-20 - 30 - 10 = -60."""
+    acc = make(
+        client,
+        balance=Decimal("0"),
+        fixed_fee=Decimal("10"),
+        overdraft_limit=Decimal("1000")
+    )
 
-
-def test_no_fee_when_balance_starts_at_zero(client):
-    """0 → −10: баланс не был положительным — комиссии нет."""
-    acc = make(client, balance=Decimal("0"), fixed_fee=Decimal("10"),
-               overdraft_limit=Decimal("1000"))
     acc.withdraw(Decimal("10"))
-    assert acc.balance == Decimal("-10")
+    acc.withdraw(Decimal("30"))
 
-
-def test_no_fee_when_balance_already_negative(client):
-    """−10 → −15: снова без комиссии."""
-    acc = make(client, balance=Decimal("0"), fixed_fee=Decimal("10"),
-               overdraft_limit=Decimal("1000"))
-    acc.withdraw(Decimal("10"))   # → −10
-    acc.withdraw(Decimal("5"))    # → −15
-    assert acc.balance == Decimal("-15")
+    assert acc.balance == Decimal("-60")
 
 
 # ---------- 4. Лимит овердрафта ----------

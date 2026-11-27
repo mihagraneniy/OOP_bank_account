@@ -19,10 +19,10 @@ from uuid import uuid4
 import pytest
 
 from bank_account.abstract_account import AbstractAccount
-from bank_account.client import Client
+from client.client import Client
 from bank_account.bank_account import BankAccount
-from bank_account.enums import Currency, AccountStatus
-from bank_account.exceptions import (
+from enums.enums import Currency, AccountStatus
+from exceptions.exceptions import (
     AccountClosedError,
     AccountFrozenError,
     InsufficientFundsError,
@@ -31,16 +31,6 @@ from bank_account.exceptions import (
 
 
 # ---------- фикстуры ----------
-
-@pytest.fixture
-def client():
-    """Минимальный валидный клиент."""
-    return Client(
-        name="Иван Иванов",
-        birth_date=date(1990, 1, 1),
-        phone="+79001234567",
-    )
-
 
 @pytest.fixture
 def account(client):
@@ -88,8 +78,8 @@ def test_new_account_currency_is_rub(account):
     assert account.currency == Currency.RUB
 
 
-def test_account_id_is_last_four_of_uuid(client):
-    """account.id — ровно последние 4 символа переданного UUID.
+def test_account_id_is_uuid(client):
+    """account.id — UUID.
 
     Важно: короткий id предназначен ТОЛЬКО для отображения.
     Уникальность счёта гарантируется полным UUID (_id), а не этими
@@ -98,21 +88,17 @@ def test_account_id_is_last_four_of_uuid(client):
     """
     full_id = uuid4()
     acc = BankAccount(owner=client, currency=Currency.RUB, account_id=full_id)
-    assert acc.id == str(full_id)[-4:]
+    assert acc.id == full_id
 
 
-def test_auto_generated_id_is_four_chars(account):
-    """Если UUID не передан, id всё равно генерируется и даёт 4 символа."""
-    assert len(account.id) == 4
+def test_auto_generated_id_is_uuid(account):
+    """Если UUID не передан, id  генерируется."""
+    from uuid import UUID
+    assert isinstance(account.id, UUID)
 
 
 def test_two_accounts_have_different_full_uuids(client):
-    """Два независимых счёта имеют разные полные UUID.
-
-    Смотрим на _id, потому что публичное свойство id показывает
-    только последние 4 символа — их совпадение теоретически возможно
-    и не означает коллизию счетов.
-    """
+    """ Два независимых счёта имеют разные полные UUID. """
     first = BankAccount(owner=client, currency=Currency.RUB)
     second = BankAccount(owner=client, currency=Currency.RUB)
     assert first._id != second._id
@@ -373,7 +359,7 @@ def test_get_account_info_returns_correct_values(account):
     """Значения в словаре соответствуют атрибутам счёта, включая type."""
     account.deposit(Decimal("1000"))
     info = account.get_account_info()
-    assert info["id"] == account.id
+    assert info["id"] == str(account.id)[-4:]
     assert info["type"] == "BankAccount"
     assert info["owner"] == "Иван Иванов"
     assert info["balance"] == Decimal("1000")
@@ -395,7 +381,7 @@ def test_str_contains_owner_name(account):
 
 def test_str_contains_account_id(account):
     """В строке есть последние 4 символа UUID (account.id)."""
-    assert account.id in str(account)
+    assert str(account.id)[-4:] in str(account)
 
 
 def test_str_contains_status(account):
@@ -444,3 +430,28 @@ def test_cannot_instantiate_abstract_account(client):
     """
     with pytest.raises(TypeError):
         AbstractAccount(owner=client)
+
+# ---------- 13. Тесты проверок после ревью ----------
+def test_bank_account_rejects_invalid_owner():
+    with pytest.raises(InvalidOperationError):
+        BankAccount(
+            owner="Иван",
+            currency=Currency.RUB
+        )
+
+
+def test_bank_account_rejects_invalid_currency(client):
+    with pytest.raises(InvalidOperationError):
+        BankAccount(
+            owner=client,
+            currency="RUB"
+        )
+
+
+def test_bank_account_rejects_invalid_account_id(client):
+    with pytest.raises(InvalidOperationError):
+        BankAccount(
+            owner=client,
+            currency=Currency.RUB,
+            account_id="12345"
+        )

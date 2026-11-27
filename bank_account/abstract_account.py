@@ -2,7 +2,7 @@ from abc  import ABC, abstractmethod
 from decimal import Decimal
 from uuid import UUID, uuid4
 from typing import Dict
-from .enums import AccountStatus
+from enums.enums import AccountStatus
 
 class AbstractAccount(ABC):
 
@@ -14,7 +14,7 @@ class AbstractAccount(ABC):
 
     @property
     def id(self):
-        return (str(self._id))[-4::]
+        return self._id
 
     @property
     def balance(self):

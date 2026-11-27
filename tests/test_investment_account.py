@@ -17,9 +17,9 @@ from datetime import date
 
 import pytest
 
-from bank_account.client import Client
-from bank_account.enums import AssetType, Currency, AccountStatus
-from bank_account.exceptions import (
+from client.client import Client
+from enums.enums import AssetType, Currency, AccountStatus
+from exceptions.exceptions import (
     AccountClosedError,
     AccountFrozenError,
     InsufficientFundsError,
@@ -29,16 +29,6 @@ from bank_account.investment_account import InvestmentAccount
 
 
 # ---------- фикстуры ----------
-
-@pytest.fixture
-def client():
-    return Client(
-        name="Иван Иванов",
-        birth_date=date(1990, 1, 1),
-        phone="+79001234567",
-    )
-
-
 @pytest.fixture
 def account(client):
     """Пустой инвестиционный счёт в рублях."""
@@ -307,3 +297,31 @@ def test_project_on_blocked_account_works(funded_account, status):
     funded_account.invest(AssetType.STOCKS, Decimal("100"))
     funded_account._status = status
     assert funded_account.project_yearly_growth() == Decimal("10.00")
+
+# ---------- 9. После правок по итогам ревью ----------
+
+def test_investment_account_withdraw(client):
+    account = InvestmentAccount(client, Currency.RUB)
+    account.deposit(Decimal("100"))
+    account.withdraw(Decimal("30"))
+
+    assert account.balance == Decimal("70")
+
+
+def test_investment_account_info_contains_portfolio(client):
+    account = InvestmentAccount(client, Currency.RUB)
+
+    info = account.get_account_info()
+
+    assert "portfolio" in info
+    assert info["type"] == "InvestmentAccount"
+
+
+def test_investment_account_str(client):
+    account = InvestmentAccount(client, Currency.RUB)
+
+    result = str(account)
+
+    assert "Инвестиционный счет" in result
+    assert "portfolio" in result
+

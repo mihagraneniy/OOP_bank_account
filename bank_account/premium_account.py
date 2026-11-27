@@ -1,5 +1,5 @@
 from .bank_account import BankAccount
-from .exceptions import InvalidOperationError
+from exceptions.exceptions import InvalidOperationError
 
 class PremiumAccount(BankAccount):
     def __init__(self, owner, currency, max_withdrawal, overdraft_limit, fixed_fee, account_id = None):
@@ -40,20 +40,17 @@ class PremiumAccount(BankAccount):
         return True
 
     def withdraw(self, amount):
-        self._validate_operation(amount, strict = True)
-        if amount <= self.max_withdrawal:
-            fee = (
-                self.fixed_fee
-                if self._balance > 0 and self._balance - amount < 0
-                else 0
-            )
-            self._check_overdraft_limit(amount, fee)
-            self._balance -= (amount + fee)
-        else:
+        self._validate_operation(amount, strict=True)
+
+        if amount > self.max_withdrawal:
             raise InvalidOperationError(
-                f"Снятие со счета {amount} превышает допустимый лимит "
-                f"{self.max_withdrawal} на {self.max_withdrawal - amount}"
+                f"Снятие со счёта {amount} превышает допустимый лимит "
+                f"{self.max_withdrawal} на {amount - self.max_withdrawal}"
             )
+
+        self._check_overdraft_limit(amount, self.fixed_fee)
+
+        self._balance -= (amount + self.fixed_fee)
 
 
     def get_account_info(self):

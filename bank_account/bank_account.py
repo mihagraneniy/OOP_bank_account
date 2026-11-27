@@ -1,16 +1,55 @@
 from .abstract_account import AbstractAccount
-from .client import Client
-from .enums import Currency, AccountStatus
+from client.client import Client
+from enums.enums import Currency, AccountStatus
 from uuid import UUID
 from decimal import Decimal
-from .exceptions import (AccountClosedError, AccountFrozenError,
+from exceptions.exceptions import (AccountClosedError, AccountFrozenError,
                         InsufficientFundsError, InvalidOperationError)
 
 class BankAccount(AbstractAccount):
+    
+    ALLOWED_CURRENCIES = (
+        Currency.RUB,
+        Currency.CNY,
+        Currency.EUR,
+        Currency.KZT,
+        Currency.USD
+    )
+    
     def __init__(self, owner: Client, currency: Currency, account_id: UUID | None = None):
+        if not isinstance(owner, Client):
+            raise InvalidOperationError(
+                f"Владелец счёта должен быть объектом Client, "
+                f"получен тип {type(owner).__name__}"
+            )
+
+        if account_id is not None and not isinstance(account_id, UUID):
+            raise InvalidOperationError(
+                f"ID счёта должен быть UUID, "
+                f"получен тип {type(account_id).__name__}"
+            )
+        self._check_currency(currency)        
+        
         super().__init__(owner, account_id)
         self.currency = currency
     
+    def _check_currency(self, currency: Currency) -> None:
+        if not isinstance(currency, Currency):
+            raise InvalidOperationError(
+                f"Валюта должна иметь тип Currency, "
+                f"получен тип {type(currency).__name__}"
+            )
+
+        allowed_currencies_str = ", ".join(
+            currency.value for currency in self.ALLOWED_CURRENCIES
+        )
+
+        if currency not in self.ALLOWED_CURRENCIES:
+            raise InvalidOperationError(
+                f"Недопустимая валюта {currency.value}. "
+                f"Поддерживаемые валюты: {allowed_currencies_str}"
+            )
+
     def _check_status(self):
         if self.status == AccountStatus.ACTIVE:
             return True
@@ -70,10 +109,15 @@ class BankAccount(AbstractAccount):
                 f"текущий баланс {self.balance} "
                 f"на {amount - self.balance} {self.currency.value}"
             )
-    
+
+    def change_account_status(self, new_status):
+        if not isinstance(new_status, AccountStatus):
+            raise InvalidOperationError(f"Некорректный статус для установки, передан {new_status}")
+        self._status = new_status
+        
     def get_account_info(self):
         return {
-            'id': self.id,
+            'id': str(self.id)[-4:],
             'type': type(self).__name__,
             'owner': self.owner.name,
             'status': self.status.value,

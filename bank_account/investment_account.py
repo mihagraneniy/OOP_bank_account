@@ -1,7 +1,7 @@
 from .bank_account import BankAccount
-from .exceptions import InvalidOperationError, InsufficientFundsError
+from exceptions.exceptions import InvalidOperationError, InsufficientFundsError
 from decimal import Decimal, ROUND_HALF_UP
-from .enums import AssetType
+from enums.enums import AssetType
 
 
 class InvestmentAccount(BankAccount):
@@ -56,4 +56,24 @@ class InvestmentAccount(BankAccount):
             rate = growth_rates.get(asset, self.GROWTH_RATES[asset])         
             total += amount * rate
         return total.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
-            
+
+    def withdraw(self, amount: Decimal):
+        super().withdraw(amount)
+
+    
+    def get_account_info(self):
+        """Информация об инвестиционном счёте."""
+        account_info = super().get_account_info()
+
+        account_info["portfolio"] = {
+            asset.value: amount
+            for asset, amount in self._portfolio.items()
+        }
+
+        return account_info
+
+
+    def __str__(self):
+        return super().__str__().replace(
+            "Банковский счет:", "Инвестиционный счет:", 1
+        )           
