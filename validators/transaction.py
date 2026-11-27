@@ -1,3 +1,4 @@
+
 from __future__ import annotations
 
 from decimal import Decimal
@@ -5,7 +6,12 @@ from datetime import datetime
 from uuid import UUID
 from typing import TYPE_CHECKING
 
-from enums.enums import TransactionType, TransactionStatus, Currency
+from enums.enums import (
+    TransactionType,
+    TransactionStatus,
+    TransactionPriority,
+    Currency,
+)
 from exceptions.exceptions import InvalidOperationError
 from validators.base import BaseValidator
 
@@ -17,20 +23,40 @@ class TransactionValidator:
     """Валидаторы для транзакций."""
 
     @staticmethod
-    def validate_amount_and_fee(amount: Decimal, fee: Decimal) -> None:
+    def validate_types(
+        transaction_type: TransactionType,
+        currency: Currency,
+        status: TransactionStatus,
+        priority: TransactionPriority,
+    ) -> None:
+        """Проверка типов основных полей транзакции."""
+
+        checks = (
+            (transaction_type, TransactionType, "transaction_type"),
+            (currency, Currency, "currency"),
+            (status, TransactionStatus, "status"),
+            (priority, TransactionPriority, "priority"),
+        )
+
+        for value, expected_type, field_name in checks:
+            if not isinstance(value, expected_type):
+                raise InvalidOperationError(
+                    f"{field_name} должен быть {expected_type.__name__}"
+                )
+
+    @staticmethod
+    def validate_amount_and_fee(
+        amount: Decimal,
+        fee: Decimal
+    ) -> None:
         """Валидация суммы и комиссии транзакции."""
+
         BaseValidator.validate_amount(
             amount, "Сумма транзакции", strict=True
         )
         BaseValidator.validate_amount(
             fee, "Комиссия", strict=False
         )
-
-        if fee > amount:
-            raise InvalidOperationError(
-                f"Комиссия ({fee}) не может превышать "
-                f"сумму транзакции ({amount})"
-            )
 
     @staticmethod
     def validate_accounts_by_type(
@@ -53,49 +79,74 @@ class TransactionValidator:
                 )
 
         if transaction_type == TransactionType.INTERNAL_TRANSFER:
-            if not sender or not receiver:
+            if sender is None or receiver is None:
                 raise InvalidOperationError(
                     "Для внутреннего перевода обязательны оба счета"
                 )
 
         elif transaction_type == TransactionType.DEPOSIT:
-            if not receiver:
+            if receiver is None:
                 raise InvalidOperationError(
                     "Для пополнения обязателен receiver"
                 )
 
         elif transaction_type == TransactionType.WITHDRAWAL:
-            if not sender:
+            if sender is None:
                 raise InvalidOperationError(
                     "Для снятия обязателен sender"
                 )
 
         elif transaction_type == TransactionType.EXTERNAL_TRANSFER:
-            if not sender or not receiver:
+            # Исходящий перевод: наш счет -> внешний получатель.
+            # Входящий перевод: внешний отправитель -> наш счет.
+            if (sender is None and receiver is None) or (
+                sender is not None and receiver is not None
+            ):
                 raise InvalidOperationError(
-                    "Для внешнего перевода обязательны оба счета"
+                    "Для внешнего перевода должен быть указан "
+                    "ровно один внутренний счет: sender или receiver"
                 )
+        else:
+            raise InvalidOperationError(
+                f"Неизвестный тип транзакции: {transaction_type}"
+            )
 
     @staticmethod
     def validate_bank_details(
         transaction_type: TransactionType,
+        sender: BankAccount | None,
+        receiver: BankAccount | None,
         sender_bank: str | None,
         receiver_bank: str | None,
         sender_account_number: str | None,
         receiver_account_number: str | None
     ) -> None:
-        """Проверка реквизитов для внешних переводов."""
+        """Проверка реквизитов внешней стороны перевода."""
 
-        if transaction_type == TransactionType.EXTERNAL_TRANSFER:
-            if not all([
-                sender_bank,
-                receiver_bank,
-                sender_account_number,
-                receiver_account_number
-            ]):
+        if transaction_type != TransactionType.EXTERNAL_TRANSFER:
+            return
+
+        if sender is not None:
+            # Исходящий перевод: внешний получатель.
+            required_details = (
+                ("receiver_bank", receiver_bank),
+                ("receiver_account_number", receiver_account_number),
+            )
+        elif receiver is not None:
+            # Входящий перевод: внешний отправитель.
+            required_details = (
+                ("sender_bank", sender_bank),
+                ("sender_account_number", sender_account_number),
+            )
+        else:
+            raise InvalidOperationError(
+                "Для внешнего перевода должен быть указан внутренний счет"
+            )
+
+        for field_name, value in required_details:
+            if not isinstance(value, str) or not value.strip():
                 raise InvalidOperationError(
-                    "Для внешнего перевода обязательны реквизиты "
-                    "банков и номера счетов"
+                    f"Для внешнего перевода обязательно поле {field_name}"
                 )
 
     @staticmethod
@@ -110,7 +161,10 @@ class TransactionValidator:
             ("sender", sender),
             ("receiver", receiver)
         ):
-            if account is not None and account.currency != transaction_currency:
+            if (
+                account is not None
+                and account.currency != transaction_currency
+            ):
                 raise InvalidOperationError(
                     f"Валюта {field_name} ({account.currency}) не совпадает "
                     f"с валютой транзакции ({transaction_currency})"
@@ -156,21 +210,30 @@ class TransactionValidator:
                 "Для статуса SCHEDULED обязательно поле scheduled_at"
             )
 
-        if status.is_terminal and processed_at is None:
+        terminal_statuses = (
+            TransactionStatus.COMPLETED,
+            TransactionStatus.FAILED,
+            TransactionStatus.CANCELLED,
+        )
+
+        if status in terminal_statuses and processed_at is None:
             raise InvalidOperationError(
-                f"Для терминального статуса ({status.code}) "
+                f"Для терминального статуса ({status.name}) "
                 f"обязательно поле processed_at"
             )
 
         if (
             processed_at is not None
-            and status in (
-                TransactionStatus.PENDING,
-                TransactionStatus.SCHEDULED,
-                TransactionStatus.PROCESSING
-            )
+            and status not in terminal_statuses
         ):
             raise InvalidOperationError(
                 "processed_at не может быть установлен "
                 "для незавершенного статуса"
+            )
+        if (
+            status == TransactionStatus.PENDING
+            and scheduled_at is not None
+        ):
+            raise InvalidOperationError(
+                "Для статуса PENDING поле scheduled_at должно отсутствовать"
             )

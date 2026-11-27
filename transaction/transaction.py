@@ -41,39 +41,74 @@ class Transaction:
     processed_at: datetime | None = None
 
 
-    def __post_init__(self) -> None:
-        """Валидация транзакции через внешние валидаторы."""
-        TransactionValidator.validate_amount_and_fee(self.amount, self.fee)
-        TransactionValidator.validate_accounts_by_type(
-            self.transaction_type, self.sender, self.receiver
-        )
-        TransactionValidator.validate_bank_details(
-            self.transaction_type,
-            self.sender_bank,
-            self.receiver_bank,
-            self.sender_account_number,
-            self.receiver_account_number
-        )
-        TransactionValidator.validate_currency_consistency(
-            self.currency, self.sender, self.receiver
-        )
-        TransactionValidator.validate_temporal_fields(
-            self.id, self.created_at, self.scheduled_at, self.processed_at
-        )
-        TransactionValidator.validate_status_consistency(
-            self.status, self.scheduled_at, self.processed_at
-        )
+def __post_init__(self) -> None:
+    """Валидация транзакции через внешние валидаторы."""
+
+    TransactionValidator.validate_types(
+        self.transaction_type,
+        self.currency,
+        self.status,
+        self.priority,
+    )
+
+    TransactionValidator.validate_amount_and_fee(
+        self.amount, self.fee
+    )
+
+    TransactionValidator.validate_accounts_by_type(
+        self.transaction_type, self.sender, self.receiver
+    )
+
+    TransactionValidator.validate_bank_details(
+        self.transaction_type,
+        self.sender,
+        self.receiver,
+        self.sender_bank,
+        self.receiver_bank,
+        self.sender_account_number,
+        self.receiver_account_number,
+    )
+
+    TransactionValidator.validate_currency_consistency(
+        self.currency, self.sender, self.receiver
+    )
+
+    TransactionValidator.validate_temporal_fields(
+        self.id,
+        self.created_at,
+        self.scheduled_at,
+        self.processed_at,
+    )
+
+    TransactionValidator.validate_status_consistency(
+        self.status,
+        self.scheduled_at,
+        self.processed_at,
+    )
 
 
+
+    # Жизненный цикл транзакции 
 
     def mark_processing(self) -> None:
+        # TODO: разрешить переход только из PENDING
+        # TODO: установить PROCESSING
         pass
 
     def mark_completed(self) -> None:
+        # TODO: разрешить переход только из PROCESSING
+        # TODO: установить COMPLETED
+        # TODO: записать processed_at
         pass
 
     def mark_failed(self, reason: str) -> None:
+        # TODO: разрешить переход только из PROCESSING
+        # TODO: проверить reason
+        # TODO: установить FAILED
+        # TODO: сохранить причину и processed_at
         pass
 
     def cancel(self) -> None:
+        # TODO: разрешить отмену из PENDING или SCHEDULED
+        # TODO: установить CANCELLED
         pass
