@@ -243,7 +243,20 @@ def test_len_counts_cancelled_until_popped(account):
     q.pop_next()
     assert len(q) == 0
 
+def test_get_next_skips_cancelled_without_removing(account):
+    queue = TransactionQueue()
 
+    high = make_tx(account, TransactionPriority.HIGH)
+    low = make_tx(account, TransactionPriority.LOW)
+
+    queue.add(high)
+    queue.add(low)
+
+    queue.cancel(high.id)
+
+    assert queue.get_next() is low
+    assert len(queue) == 2
+    assert queue.get_next() is low
 # ---------------------------------------------------------
 # 6. Интеграция: порядок выборки
 # ---------------------------------------------------------
