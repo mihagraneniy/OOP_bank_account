@@ -6,7 +6,7 @@ class SecurityConfig:
     # --- Аутентификация ---
     max_login_attempts: int = 3
 
-    # --- Ночные операции ---
+    # --- Ночные часы ---
     night_start_hour: int = 0          # 00:00
     night_end_hour: int = 5            # до 05:00 (не включительно)
 

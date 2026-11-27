@@ -53,3 +53,8 @@ class SuspiciousActivityError(BankError):
 
 class OperationTimeError(BankError):
     pass
+
+
+#Транзакции
+class TransactionStatusError(BankError):
+    pass

@@ -12,7 +12,7 @@ from enums.enums import (
     TransactionPriority,
     Currency,
 )
-from exceptions.exceptions import InvalidOperationError
+from exceptions.exceptions import InvalidOperationError, TransactionStatusError
 from validators.base import BaseValidator
 
 if TYPE_CHECKING:
@@ -192,11 +192,6 @@ class TransactionValidator:
                     value, field_name, allow_none=True
                 )
 
-                if value < created_at:
-                    raise InvalidOperationError(
-                        f"{field_name} не может быть раньше created_at"
-                    )
-
     @staticmethod
     def validate_status_consistency(
         status: TransactionStatus,
@@ -236,4 +231,33 @@ class TransactionValidator:
         ):
             raise InvalidOperationError(
                 "Для статуса PENDING поле scheduled_at должно отсутствовать"
+            )
+
+    @staticmethod
+    def validate_status_transition(
+        current_status: TransactionStatus,
+        new_status: TransactionStatus,
+    ) -> None:
+        """Проверка допустимости перехода между статусами."""
+
+        allowed_transitions = {
+            TransactionStatus.PENDING: {
+                TransactionStatus.PROCESSING,
+                TransactionStatus.CANCELLED,
+            },
+            TransactionStatus.SCHEDULED: {
+                TransactionStatus.PROCESSING,
+                TransactionStatus.CANCELLED,
+            },
+            TransactionStatus.PROCESSING: {
+                TransactionStatus.COMPLETED,
+                TransactionStatus.FAILED,
+            },
+
+        }
+
+        if new_status not in allowed_transitions.get(current_status, set()):
+            raise TransactionStatusError(
+                f"Недопустимый переход из {current_status.name} "
+                f"в {new_status.name}"
             )
