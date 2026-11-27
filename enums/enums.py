@@ -43,3 +43,25 @@ class SuspiciousEventType(Enum):
     NIGHT_OPERATION = "Операция в ночное время"
     RAPID_ACCOUNT_OPENING = "Открытие нескольких счетов за короткое время"
     SUSPICIOUS_FREQUENCY = "Подозрительно высокая частота операций"
+
+
+#Транзакции
+class TransactionType(Enum):
+    DEPOSIT = "пополнение"
+    WITHDRAWAL = "снятие"
+    INTERNAL_TRANSFER = "перевод внутри банка"
+    EXTERNAL_TRANSFER = "внешний перевод"
+
+
+class TransactionStatus(Enum):
+    PENDING =  "ожидает обработки"
+    PROCESSING = "обрабатывается"
+    COMPLETED = "выполнена"
+    FAILED =  "ошибка"
+    CANCELLED =  "отменена"
+    SCHEDULED =  "отложена"
+
+class TransactionPriority(Enum):
+    LOW = "low"
+    NORMAL = "normal"
+    HIGH = "high"

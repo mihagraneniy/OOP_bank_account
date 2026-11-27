@@ -1,40 +1,48 @@
-from abc  import ABC, abstractmethod
+
+from abc import ABC, abstractmethod
 from decimal import Decimal
 from uuid import UUID, uuid4
 from typing import Dict
+
 from enums.enums import AccountStatus
+from validators import BaseValidator
+
 
 class AbstractAccount(ABC):
 
-    def __init__(self, owner, account_id: UUID | None  = None):
-        self._id = account_id if account_id is not None else uuid4()  
+    def __init__(
+        self,
+        owner,
+        account_id: UUID | None = None
+    ) -> None:
+        if account_id is not None:
+            BaseValidator.validate_uuid(account_id, "ID счёта")
+
+        self._id = account_id if account_id is not None else uuid4()
         self._balance = Decimal("0")
         self._status = AccountStatus.ACTIVE
         self.owner = owner
 
     @property
-    def id(self):
+    def id(self) -> UUID:
         return self._id
 
     @property
-    def balance(self):
+    def balance(self) -> Decimal:
         return self._balance
 
     @property
-    def status(self):
+    def status(self) -> AccountStatus:
         return self._status
-   
+
     @abstractmethod
     def deposit(self, amount: Decimal) -> None:
-        """ Пополнение — общая логика """
-        pass
+        """Пополнение счёта."""
 
     @abstractmethod
     def withdraw(self, amount: Decimal) -> None:
-        """ Снятие — общая логика """
-        pass
+        """Снятие средств со счёта."""
 
     @abstractmethod
     def get_account_info(self) -> Dict:
-        """ Доступный баланс — общая логика """
-        pass
+        """Получение информации о счёте."""
