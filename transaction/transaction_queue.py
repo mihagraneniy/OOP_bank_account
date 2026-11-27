@@ -36,13 +36,19 @@ class TransactionQueue:
         self._counter += 1
         self._transactions[transaction.id] = transaction
 
-
     def get_next(self) -> Transaction | None:
         if not self._queue:
             return None
 
-        return self._queue[0][2]
-
+        item = min(
+            (
+                entry for entry in self._queue
+                if entry[2].status != TransactionStatus.CANCELLED
+            ),
+            key=lambda entry: (entry[0], entry[1]),
+            default=None,
+        )
+        return item[2] if item is not None else None
 
     def cancel(self, transaction_id) -> bool:
         transaction = self._transactions.get(transaction_id)

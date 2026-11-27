@@ -121,16 +121,22 @@ def test_get_next_fifo_for_same_priority(account):
 
 
 def test_get_next_returns_cancelled_transaction(account):
-    """⚠ Фиксируем текущее поведение: get_next НЕ пропускает CANCELLED.
-
-    Если это баг — нужно синхронизировать с pop_next (см. примечание в конце).
+    """⚠ Фиксируем текущее поведение: get_next пропускает CANCELLED
     """
     q = TransactionQueue()
     tx = make_tx(account)
     q.add(tx)
     q.cancel(tx.id)
-    assert q.get_next() is tx
+    assert q.get_next() is not tx
 
+def test_get_next_returns_transaction_not_tuple(account):
+    """Регрессия: раньше возвращался (priority, counter, tx)."""
+    q = TransactionQueue()
+    tx = make_tx(account)
+    q.add(tx)
+    result = q.get_next()
+    assert isinstance(result, Transaction)
+    assert result is tx
 
 # ---------------------------------------------------------
 # 3. pop_next()
